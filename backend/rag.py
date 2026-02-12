@@ -4,32 +4,28 @@ from typing import TypedDict, Annotated, Sequence
 from operator import add as add_messages
 
 from pymongo import MongoClient
-
 from langgraph.graph import StateGraph, END
 from langchain_core.messages import BaseMessage, SystemMessage, HumanMessage
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_mongodb import MongoDBAtlasVectorSearch
 from langchain_core.tools import tool
 from groq import Groq
-
 from pdf_loader import load_and_split_pdf
+from db import embeddings_collection, VECTOR_INDEX_NAME
 
 # -------------------------------
 # Load environment variables
 # -------------------------------
 load_dotenv()
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
-MONGO_URI = os.environ.get("MONGO_URI")
-
 if not GROQ_API_KEY:
     raise ValueError("GROQ_API_KEY not found in .env")
-if not MONGO_URI:
-    raise ValueError("MONGO_URI not found in .env")
 
 # -------------------------------
 # PDF and embeddings
 # -------------------------------
-PDF_PATH = "data/document.pdf"
+# This PDF path is temporary; uploaded PDFs will be processed dynamically
+PDF_PATH = "uploads/document.pdf"
 pages_split = load_and_split_pdf(PDF_PATH)
 
 embeddings = HuggingFaceEmbeddings(
@@ -40,20 +36,11 @@ embeddings = HuggingFaceEmbeddings(
 # -------------------------------
 # MongoDB Atlas vector search
 # -------------------------------
-DB_NAME = "rag"
-COLLECTION_NAME = "embeddings"
-INDEX_NAME = "vector_index"
-
-# Connect to MongoDB Atlas
-client = MongoClient(MONGO_URI)
-collection = client[DB_NAME][COLLECTION_NAME]
-
-# Create vectorstore
 vectorstore = MongoDBAtlasVectorSearch.from_documents(
     documents=pages_split,
     embedding=embeddings,
-    collection=collection,  # Must pass pymongo Collection object
-    index_name=INDEX_NAME   # Must match Atlas vector index
+    collection=embeddings_collection,
+    index_name=VECTOR_INDEX_NAME
 )
 
 retriever = vectorstore.as_retriever(search_kwargs={"k": 10})
@@ -72,6 +59,7 @@ def retriever_tool(query: str) -> str:
         return "No relevant content found in the PDF."
     
     return "\n\n".join(doc.page_content for doc in docs)
+
 
 # -------------------------------
 # Groq LLM wrapper
@@ -106,7 +94,6 @@ def call_llm(state: AgentState) -> dict:
     messages = list(state["messages"])
     user_query = messages[-1].content
 
-    # Get context from PDF via vector search
     context = retriever_tool.invoke(user_query)
 
     system_prompt = (
@@ -115,15 +102,10 @@ def call_llm(state: AgentState) -> dict:
         f"CONTEXT:\n{context}"
     )
 
-    # Combine system prompt with conversation messages
     prompt = [SystemMessage(content=system_prompt)] + messages
-
-    # Call LLM
     response = llm.invoke(prompt)
-
     return {"messages": [response]}
 
-# Create workflow graph
 workflow = StateGraph(AgentState)
 workflow.add_node("agent", call_llm)
 workflow.set_entry_point("agent")
@@ -135,8 +117,5 @@ rag_agent = workflow.compile()
 # Main RAG function
 # -------------------------------
 def ask_rag(question: str) -> str:
-    """
-    Ask a question and get a response from RAG agent.
-    """
     result = rag_agent.invoke({"messages": [HumanMessage(content=question)]})
     return result["messages"][-1].content
