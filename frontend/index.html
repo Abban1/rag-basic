@@ -2,80 +2,77 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <title>PDF RAG Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PDF RAG Chat - AI-Powered Document Q&A</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="app-wrapper">
 
-    <!-- Auth Section -->
-    <div id="auth-section">
-      <div class="auth-container">
-        <h1>📄 PDF Chat</h1>
-        <p class="auth-subtitle">AI-powered document question answering</p>
-        
-        <div class="auth-form">
-          <input id="email" type="email" placeholder="Email" autocomplete="email">
-          <input id="password" type="password" placeholder="Password" autocomplete="current-password">
-          
-          <div class="auth-buttons">
-            <button onclick="login()" class="btn-primary">Login</button>
-            <button onclick="signup()" class="btn-secondary">Signup</button>
-          </div>
-          
-          <p id="auth-msg" class="auth-message"></p>
-        </div>
+<!-- ================= AUTH PAGE ================= -->
+<div id="auth-section" class="auth-page">
+  <div class="auth-card">
+    <h1>PDF RAG AI</h1>
+    <p>Login to chat with your documents</p>
+
+    <input id="email" type="email" placeholder="Email">
+    <input id="password" type="password" placeholder="Password">
+
+    <div class="auth-buttons">
+      <button onclick="login()">Login</button>
+      <button onclick="signup()" class="outline">Signup</button>
+    </div>
+
+    <p id="auth-msg"></p>
+  </div>
+</div>
+
+<!-- ================= MAIN APP ================= -->
+<div id="main-section" class="app-layout" style="display:none;">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <h2>📄 Documents</h2>
+
+    <input type="file" id="pdf-file" accept=".pdf">
+    <button onclick="uploadPDF()">Upload PDF</button>
+    <p id="upload-msg"></p>
+
+    <hr>
+
+    <button onclick="loadHistory()">Load History</button>
+    <div id="history" class="history-box"></div>
+
+    <button onclick="logout()" class="logout">Logout</button>
+  </aside>
+
+  <!-- Main Chat Area -->
+  <div class="chat-container">
+
+    <header class="chat-header">
+      <h3>AI Document Assistant</h3>
+    </header>
+
+    <div id="chat" class="chat-area">
+      <div class="welcome">
+        <h2>Welcome 👋</h2>
+        <p>Upload a PDF and start asking questions.</p>
       </div>
     </div>
 
-    <!-- Main Chat Section -->
-    <div id="main-section" style="display:none;">
-      <header class="header">
-        <h2>📄 PDF Chat</h2>
-        <button onclick="logout()" class="btn-logout">Logout</button>
-      </header>
-
-      <!-- PDF Upload -->
-      <div class="pdf-upload">
-        <div class="upload-container">
-          <input type="file" id="pdf-file" accept=".pdf">
-          <button onclick="uploadPDF()" class="btn-upload">Upload PDF</button>
-          <p id="upload-msg" class="upload-message"></p>
-        </div>
-      </div>
-
-      <!-- Chat Container -->
-      <div id="chat" class="chat-messages">
-        <div class="welcome-screen">
-          <div class="welcome-icon">📄</div>
-          <h2>Welcome to PDF Chat</h2>
-          <p>Upload a PDF and ask questions about its content</p>
-        </div>
-      </div>
-
-      <!-- Input Area -->
-      <div class="input-area">
-        <input 
-          id="message" 
-          type="text"
-          placeholder="Ask a question about your PDF..."
-          onkeypress="if(event.key==='Enter') sendMessage()"
-        />
-        <button onclick="sendMessage()" class="btn-send">
-          <span>Send</span>
-        </button>
-      </div>
-
-      <!-- Chat History Section -->
-      <div class="history-section">
-        <button onclick="loadHistory()" class="btn-history">Load Chat History</button>
-        <div id="history" class="history-container"></div>
-      </div>
+    <div class="chat-input">
+      <input
+        id="message"
+        type="text"
+        placeholder="Ask something about your PDF..."
+        onkeypress="if(event.key==='Enter') sendMessage()"
+      />
+      <button onclick="sendMessage()">Send</button>
     </div>
 
   </div>
 
-  <script src="script.js"></script>
+</div>
+
+<script src="script.js"></script>
 </body>
 </html>
